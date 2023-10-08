@@ -204,9 +204,6 @@ export class SMTPClient {
       for (let i = 0; i < config.mimeContent.length; i++) {
         this.#connection.writeCmd(`--${messageBoundary}`);
         this.#connection.writeCmd(
-          "Content-Disposition: " + "inline",
-        );
-        this.#connection.writeCmd(
           "Content-Type: " + config.mimeContent[i].mimeType,
         );
         if (config.mimeContent[i].transferEncoding) {
@@ -229,27 +226,30 @@ export class SMTPClient {
         const attachment = config.attachments[i];
 
         this.#connection.writeCmd(`--${attachmentBoundary}`);
-        this.#connection.writeCmd(
+        if (attachment.filename)
+          this.#connection.writeCmd(
+            "Content-Type:",
+            attachment.contentType + ";",
+            "name=" + attachment.filename
+          );
+        else this.#connection.writeCmd(
           "Content-Type:",
-          attachment.contentType + ";",
-          "Content-Disposition:",
-          "inline" + ";",
-          // "name=" + attachment.filename,
+          attachment.contentType + ";"
         );
-        console.log(attachment.filename,attachment.contentID, attachment.contentType)
-
         if (attachment.contentID) {
           this.#connection.writeCmd(
             `Content-ID: <${attachment.contentID}>`,
           );
         }
-
-        // this.#connection.writeCmd(
-        //   "Content-Disposition: attachment; filename=" + attachment.filename,
-        // );
-        this.#connection.writeCmd(
-          "Content-Disposition: inline;",
-        );
+        if (attachment.contentDisposition === "inline")
+          this.#connection.writeCmd(
+            "Content-Disposition: inline;"
+          );
+        else {
+          this.#connection.writeCmd(
+            "Content-Disposition: attachment; filename=" + attachment.filename,
+          );
+        }
 
         if (attachment.encoding === "base64") {
           this.#connection.writeCmd(

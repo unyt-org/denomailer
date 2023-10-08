@@ -2,7 +2,8 @@ import { base64Encode } from "./encoding.ts";
 
 interface baseAttachment {
   contentType: string;
-  filename: string;
+  filename?: string;
+  contentDisposition?: "inline" | "attachment",
   contentID?: string | number;
 }
 
