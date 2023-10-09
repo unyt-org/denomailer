@@ -15,6 +15,13 @@ import {
 import { ResolvedClientOptions } from "../client.ts";
 import { Headers, validateHeaders } from "./headers.ts";
 import { quotedPrintableEncodeInline } from "./encoding.ts";
+
+export interface ListItem {
+  name: string;
+  url: string | URL;
+  comment?: string;
+}
+
 /**
  * Config for a mail
  */
@@ -33,6 +40,7 @@ export interface SendConfig {
   references?: string;
   priority?: "high" | "normal" | "low";
   attachments?: Attachment[];
+  list?: ListItem[];
   /**
    * type of mail for example `registration` or `newsletter` etc.
    * allowes preprocessors to hande different email types
@@ -54,6 +62,7 @@ export interface ResolvedSendConfig {
   references?: string;
   priority?: "high" | "normal" | "low";
   attachments: ResolvedAttachment[];
+  list?: ListItem[];
   internalTag?: string | symbol;
   headers: Headers;
 }

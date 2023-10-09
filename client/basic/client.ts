@@ -123,6 +123,13 @@ export class SMTPClient {
         this.#connection.writeCmd(name + ": ", value);
       }
 
+      if (config.list) {
+        for (const item of config.list) {
+          const listName = item.name[0].toUpperCase().concat(item.name.slice(1).toLowerCase());
+          this.#connection.writeCmd(`List-${listName}: <${item.url}>${item.comment ? ` (${item.comment})` : ''}`);
+        }
+      }
+
       if (config.inReplyTo) {
         this.#connection.writeCmd("InReplyTo: ", config.inReplyTo);
       }
