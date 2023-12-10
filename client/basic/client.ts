@@ -22,10 +22,12 @@ export class SMTPClient {
     this.#ready = (async () => {
       let conn: Deno.Conn;
       if (this.config.connection.tls) {
+        console.log("DEBUG", "conn1")
         conn = await Deno.connectTls({
           hostname: this.config.connection.hostname,
           port: this.config.connection.port,
         });
+        console.log("DEBUG", "conn2")
         this.secure = true;
       } else {
         conn = await Deno.connect({
@@ -54,10 +56,14 @@ export class SMTPClient {
   }
 
   async send(config: ResolvedSendConfig) {
+    console.log("DEBUG", "send client")
     await this.#ready;
+    console.log("DEBUG", "ready client")
+    
     let dataMode = false;
     try {
       await this.#que.que();
+      console.log("DEBUG", "que")
 
       await this.#connection.writeCmdAndAssert(
         CommandCode.OK,
@@ -65,6 +71,7 @@ export class SMTPClient {
         "FROM:",
         `<${config.from.mail}>`,
       );
+      console.log("DEBUG", "1")
 
       for (let i = 0; i < config.to.length; i++) {
         await this.#connection.writeCmdAndAssert(
@@ -74,6 +81,7 @@ export class SMTPClient {
           `<${config.to[i].mail}>`,
         );
       }
+      console.log("DEBUG", "2")
 
       for (let i = 0; i < config.cc.length; i++) {
         await this.#connection.writeCmdAndAssert(
@@ -83,6 +91,7 @@ export class SMTPClient {
           `<${config.cc[i].mail}>`,
         );
       }
+      console.log("DEBUG", "3")
 
       for (let i = 0; i < config.bcc.length; i++) {
         await this.#connection.writeCmdAndAssert(
@@ -92,9 +101,11 @@ export class SMTPClient {
           `<${config.bcc[i].mail}>`,
         );
       }
+      console.log("DEBUG", "4")
 
       dataMode = true;
       await this.#connection.writeCmdAndAssert(CommandCode.BEGIN_DATA, "DATA");
+      console.log("DEBUG", "5")
 
       this.#connection.writeCmd("Subject: ", config.subject);
       this.#connection.writeCmd(
@@ -115,6 +126,7 @@ export class SMTPClient {
       }
 
       this.#connection.writeCmd("Date: ", config.date);
+      console.log("DEBUG", "6")
 
       const obj = Object.entries(config.headers);
 
@@ -148,6 +160,7 @@ export class SMTPClient {
       if (config.priority) {
         this.#connection.writeCmd("Priority:", config.priority);
       }
+      console.log("DEBUG", "7")
 
       this.#connection.writeCmd("MIME-Version: 1.0");
 
@@ -180,6 +193,7 @@ export class SMTPClient {
           return "";
         },
       );
+      console.log("DEBUG", "8")
 
       const attachmentBoundary = `attachment${boundaryAdditionAtt}`;
 
@@ -299,12 +313,16 @@ export class SMTPClient {
       }
 
       this.#connection.writeCmd(`--${attachmentBoundary}--\r\n`);
+      console.log("DEBUG", "9")
 
       // Wait for all writes to finish
       await this.#connection.writeCmdAndAssert(CommandCode.OK, ".\r\n");
+      console.log("DEBUG", "10")
 
       dataMode = false;
       await this.#cleanup();
+      console.log("DEBUG", "11")
+
       this.#que.next();
     } catch (ex) {
       if (dataMode) {
@@ -321,14 +339,19 @@ export class SMTPClient {
   }
 
   async #prepareConnection() {
+    console.log("DEBUG", "prepareConnection1")
+
     this.#connection.assertCode(
       await this.#connection.readCmd(),
       CommandCode.READY,
     );
+    console.log("DEBUG", "prepareConnection2")
 
     await this.#connection.writeCmd("EHLO", this.config.connection.hostname);
+    console.log("DEBUG", "prepareConnection3")
 
     const cmd = await this.#connection.readCmd();
+    console.log("DEBUG", "prepareConnection4")
 
     if (!cmd) throw new Error("Unexpected empty response");
 
@@ -349,12 +372,16 @@ export class SMTPClient {
       !this.config.debug.noStartTLS
     ) {
       this.#connection.writeCmdAndAssert(CommandCode.READY, "STARTTLS");
+      console.log("DEBUG", "prepareConnection5")
 
       await this.#connection.cleanupForStartTLS();
+      console.log("DEBUG", "prepareConnection6")
 
       const conn = await Deno.startTls(this.#connection.conn, {
         hostname: this.config.connection.hostname,
       });
+      console.log("DEBUG", "prepareConnection7!")
+
       this.#connection = new SMTPConnection(conn, this.config);
       this.secure = true;
 
@@ -384,18 +411,25 @@ export class SMTPClient {
         btoa(this.config.connection.auth.password),
       );
     }
+    console.log("DEBUG", "prepareConnection8!")
 
     await this.#cleanup();
+    console.log("DEBUG", "prepareConnection9!")
+
   }
 
   #supportedFeatures = new Set<string>();
 
   async #cleanup() {
     this.#connection.writeCmd("NOOP");
+    console.log("DEBUG", "cleanup1!")
 
     while (true) {
       const cmd = await this.#connection.readCmd();
-      if (cmd && cmd.code === 250) return;
+      if (cmd && cmd.code === 250) {
+        console.log("DEBUG", "cleanup2!")
+        return;
+      }
     }
   }
 }

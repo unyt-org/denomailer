@@ -16,10 +16,12 @@ let hasIdlePromise = false;
 
 async function send(config: ResolvedSendConfig) {
   client.send(config);
-
+  console.info("DEBUG", "send worker");
   if (!hasIdlePromise) {
+    console.info("DEBUG", "!hasIdlePromise");
     hasIdlePromise = true;
     await client.idle;
+    console.info("DEBUG", "idle done");
     postMessage(false);
     hasIdlePromise = false;
   }

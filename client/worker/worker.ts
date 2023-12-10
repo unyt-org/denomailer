@@ -24,6 +24,8 @@ export class SMTPWorker {
   >();
 
   #startup() {
+    console.info("DEBUG", "worker startup...");
+
     this.#w = new Worker(new URL("./worker-file.ts", import.meta.url), {
       type: "module",
       deno: {
@@ -37,6 +39,7 @@ export class SMTPWorker {
       // This allowes the deno option so only for pool and worker we need --unstable
       // deno-lint-ignore no-explicit-any
     } as any);
+    console.info("DEBUG", "worker startup2...");
 
     this.#w.addEventListener(
       "message",
@@ -109,12 +112,18 @@ export class SMTPWorker {
   }
 
   public send(mail: ResolvedSendConfig) {
+    console.info("DEBUG", "send...");
+
     const myID = this.id;
     this.id++;
     this.#stopIdle();
+    console.info("DEBUG", "stopped idle", this.#noCon);
+
     if (this.#noCon) {
       this.#startup();
     }
+    console.info("DEBUG", "startup done");
+
     this.#w.postMessage({
       __mail: myID,
       mail,
@@ -126,6 +135,7 @@ export class SMTPWorker {
   }
 
   close() {
+    console.info("DEBUG", "close...");
     if (this.#w) this.#w.terminate();
     if (this.#idleTO) {
       clearTimeout(this.#idleTO);

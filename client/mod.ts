@@ -135,13 +135,16 @@ export class SMTPHandler {
    * @returns nothing (for now as this might change in the future!)
    */
   send(config: SendConfig): Promise<void> {
+    console.info("DEBUG", "send config...");
     let resolvedConfig = resolveSendConfig(config);
+    console.info("DEBUG", "resolved config...");
 
     for (let i = 0; i < this.#clientConfig.client.preprocessors.length; i++) {
       const cb = this.#clientConfig.client.preprocessors[i];
 
       resolvedConfig = cb(resolvedConfig, this.#clientConfig);
     }
+    console.info("DEBUG", "resolved config 2...");
 
     return this.#internalClient.send(resolvedConfig);
   }
